@@ -1,5 +1,5 @@
 <?php
-$conn = mysqli_connect("localhost", "root", "", "coin");
+$conn = mysqli_connect("localhost", "root", "", "coin3");
 define('SERVER_PATH', $_SERVER['DOCUMENT_ROOT'] . '/coin/');
 define('SITE_PATH', 'http://localhost/coin/');
 

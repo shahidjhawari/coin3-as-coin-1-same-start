@@ -22,7 +22,7 @@ $stmt->close();
 $success_message = $error_message = "";
 
 // Handle the staking form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['stake_amount'])) {
     $stake_amount = $_POST['stake_amount'];
 
     if ($stake_amount > 0 && $stake_amount <= $wallet_balance) {
@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $conn->prepare("INSERT INTO stakings (user_id, amount) VALUES (?, ?)");
         $stmt->bind_param("id", $user_id, $stake_amount);
         $stmt->execute();
-        $staking_id = $stmt->insert_id;  // Get the inserted staking ID
+        $staking_id = $stmt->insert_id;
         $stmt->close();
 
         // Deduct the staked amount from the user's balance
@@ -60,10 +60,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
 
         $success_message = "Successfully staked $" . htmlspecialchars(number_format($stake_amount, 2)) . " and earned $" . htmlspecialchars(number_format($first_earning, 2));
-
     } else {
         $error_message = "Invalid staking amount.";
     }
+}
+
+// Handle the claim earnings form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['claim_earnings'])) {
+    $stmt = $conn->prepare("SELECT id, total_earned, claimed FROM stakings WHERE user_id = ? AND status = 'active'");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    while ($staking = $result->fetch_assoc()) {
+        $earnings_to_claim = $staking['total_earned'] - $staking['claimed'];
+
+        if ($earnings_to_claim > 0) {
+            // Update the staking record to mark the earnings as claimed
+            $stmt_update = $conn->prepare("UPDATE stakings SET claimed = claimed + ? WHERE id = ?");
+            $stmt_update->bind_param("di", $earnings_to_claim, $staking['id']);
+            $stmt_update->execute();
+            $stmt_update->close();
+
+            // Add the earnings to the user's wallet balance
+            $stmt_update = $conn->prepare("INSERT INTO deposits (user_id, amount, status) VALUES (?, ?, 'accepted')");
+            $stmt_update->bind_param("id", $user_id, $earnings_to_claim);
+            $stmt_update->execute();
+            $stmt_update->close();
+        }
+    }
+    $stmt->close();
+
+    // Recalculate the wallet balance
+    $stmt = $conn->prepare("SELECT SUM(amount) AS wallet_balance FROM deposits WHERE user_id = ? AND status = 'accepted'");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $wallet_balance = $stmt->get_result()->fetch_assoc()['wallet_balance'] ?? 0;
+    $stmt->close();
+
+    $success_message = "All daily earnings have been claimed.";
 }
 
 // Fetch staking records and calculate earnings
@@ -124,15 +159,17 @@ function calculateAndUpdateEarnings(&$staking) {
         }
     }
 }
+
+// Calculate total estimated and remaining earnings
+$total_estimated_earning = $total_staking_amount * 3;
+$total_remaining_earning = $total_estimated_earning;
+foreach ($staking_records as $record) {
+    $total_remaining_earning -= $record['total_earned'];
+}
+
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>Staking</title>
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
+
     <div class="container">
         <h2>Staking</h2>
         <p>Wallet Balance: $<?php echo htmlspecialchars(number_format($wallet_balance, 2)); ?></p>
@@ -157,6 +194,10 @@ function calculateAndUpdateEarnings(&$staking) {
             <button type="submit" class="btn btn-primary">Stake</button>
         </form>
 
+        <form method="post" action="staking.php">
+            <button type="submit" name="claim_earnings" class="btn btn-success mt-3">Claim Now</button>
+        </form>
+
         <h3>Staking Records</h3>
         <table class="table">
             <thead>
@@ -165,7 +206,7 @@ function calculateAndUpdateEarnings(&$staking) {
                     <th>Amount</th>
                     <th>Total Earned</th>
                     <th>Status</th>
-                    <th>Start Date</th>
+                    <th>Date</th>
                 </tr>
             </thead>
             <tbody>
@@ -177,23 +218,8 @@ function calculateAndUpdateEarnings(&$staking) {
                         <td><?php echo htmlspecialchars($record['status']); ?></td>
                         <td><?php echo $record['start_time']; ?></td>
                     </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-
-        <h3>Daily Earning Records</h3>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Stake ID</th>
-                    <th>Daily Earning ID</th>
-                    <th>Daily Earning</th>
-                    <th>Date</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php
-                foreach ($staking_records as $record) {
+                    <?php
+                    // Fetch daily earnings for this staking record
                     $stmt = $conn->prepare("SELECT * FROM daily_earnings WHERE staking_id = ?");
                     $stmt->bind_param("i", $record['id']);
                     $stmt->execute();
@@ -207,8 +233,8 @@ function calculateAndUpdateEarnings(&$staking) {
                         echo '</tr>';
                     }
                     $stmt->close();
-                }
                 ?>
+                <?php endforeach; ?>
             </tbody>
         </table>
 
@@ -216,10 +242,10 @@ function calculateAndUpdateEarnings(&$staking) {
         <p>Total staking amount: $<?php echo htmlspecialchars(number_format($total_staking_amount, 2)); ?></p>
 
         <h3>Total Estimated Earning</h3>
-        <p>Total Estimated Earning: <!-- Here it will show the estimated earning that how much he has to earn, for example if the user has invested 10 dollars, then he will get 30 dollars, then 30 dollars will be shown here. --> </p>
+        <p>Total Estimated Earning: $<?php echo htmlspecialchars(number_format($total_estimated_earning, 2)); ?></p>
 
         <h3>Total Remaining Earning</h3>
-        <p>Total Remaining Earning: <!-- Here, the remaining earnings will be shown to the user out of three times, that is, as much as he has earned, what is left will be shown to him. If something has been done through it, then the remaining earnings will be shown here.. --> </p>
+        <p>Total Remaining Earning: $<?php echo htmlspecialchars(number_format($total_remaining_earning, 2)); ?></p>
     </div>
 </body>
 </html>

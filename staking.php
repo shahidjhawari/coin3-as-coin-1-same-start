@@ -167,8 +167,27 @@ foreach ($staking_records as $record) {
     $total_remaining_earning -= $record['total_earned'];
 }
 
-?>
+function calculateUnclaimedEarnings($user_id) {
+    global $conn;
+    $total_unclaimed_earnings = 0;
 
+    $stmt = $conn->prepare("SELECT total_earned, claimed FROM stakings WHERE user_id = ? AND status = 'active'");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    while ($staking = $result->fetch_assoc()) {
+        $total_unclaimed_earnings += ($staking['total_earned'] - $staking['claimed']);
+    }
+
+    $stmt->close();
+    return $total_unclaimed_earnings;
+}
+
+// Calculate unclaimed earnings
+$total_unclaimed_earnings = calculateUnclaimedEarnings($user_id);
+
+?>
 
     <div class="container">
         <h2>Staking</h2>
@@ -195,7 +214,7 @@ foreach ($staking_records as $record) {
         </form>
 
         <form method="post" action="staking.php">
-            <button type="submit" name="claim_earnings" class="btn btn-success mt-3">Claim Now</button>
+            <button type="submit" name="claim_earnings" class="btn btn-success mt-3" <?php echo ($total_unclaimed_earnings <= 0) ? 'disabled' : ''; ?>>Claim Now</button>
         </form>
 
         <h3>Staking Records</h3>
@@ -247,5 +266,3 @@ foreach ($staking_records as $record) {
         <h3>Total Remaining Earning</h3>
         <p>Total Remaining Earning: $<?php echo htmlspecialchars(number_format($total_remaining_earning, 2)); ?></p>
     </div>
-</body>
-</html>

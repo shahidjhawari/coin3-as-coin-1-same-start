@@ -3,6 +3,7 @@ ob_start();
 session_start();
 require('header.php');
 
+// Set the default timezone to Pakistan Standard Time
 date_default_timezone_set('Asia/Karachi');
 
 // Redirect to login page if not logged in
@@ -162,7 +163,6 @@ function calculateAndUpdateEarnings(&$staking) {
     }
 }
 
-
 // Calculate total estimated and remaining earnings
 $total_estimated_earning = $total_staking_amount * 3;
 $total_remaining_earning = $total_estimated_earning;
@@ -192,80 +192,80 @@ $total_unclaimed_earnings = calculateUnclaimedEarnings($user_id);
 
 ?>
 
-    <div class="container">
-        <h2>Staking</h2>
-        <p>Wallet Balance: $<?php echo htmlspecialchars(number_format($wallet_balance, 2)); ?></p>
+<div class="container">
+    <h2>Staking</h2>
+    <p>Wallet Balance: $<?php echo htmlspecialchars(number_format($wallet_balance, 2)); ?></p>
 
-        <?php if (!empty($success_message)) : ?>
-            <div class="alert alert-success">
-                <?php echo $success_message; ?>
-            </div>
-        <?php endif; ?>
+    <?php if (!empty($success_message)) : ?>
+        <div class="alert alert-success">
+            <?php echo $success_message; ?>
+        </div>
+    <?php endif; ?>
 
-        <?php if (!empty($error_message)) : ?>
-            <div class="alert alert-danger">
-                <?php echo $error_message; ?>
-            </div>
-        <?php endif; ?>
+    <?php if (!empty($error_message)) : ?>
+        <div class="alert alert-danger">
+            <?php echo $error_message; ?>
+        </div>
+    <?php endif; ?>
 
-        <form method="post" action="staking.php">
-            <div class="form-group">
-                <label for="stake_amount">Amount to Stake:</label>
-                <input type="number" class="form-control" id="stake_amount" name="stake_amount" step="0.01" min="5" max="<?php echo htmlspecialchars($wallet_balance); ?>" required>
-            </div>
-            <button type="submit" class="btn btn-primary">Stake</button>
-        </form>
+    <form method="post" action="staking.php">
+        <div class="form-group">
+            <label for="stake_amount">Amount to Stake:</label>
+            <input type="number" class="form-control" id="stake_amount" name="stake_amount" step="0.01" min="5" max="<?php echo htmlspecialchars($wallet_balance); ?>" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Stake</button>
+    </form>
 
-        <form method="post" action="staking.php">
-            <button type="submit" name="claim_earnings" class="btn btn-success mt-3" <?php echo ($total_unclaimed_earnings <= 0) ? 'disabled' : ''; ?>>Claim Now</button>
-        </form>
+    <form method="post" action="staking.php">
+        <button type="submit" name="claim_earnings" class="btn btn-success mt-3" <?php echo ($total_unclaimed_earnings <= 0) ? 'disabled' : ''; ?>>Claim Now</button>
+    </form>
 
-        <h3>Staking Records</h3>
-        <table class="table">
-            <thead>
+    <h3>Staking Records</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Stake ID</th>
+                <th>Amount</th>
+                <th>Total Earned</th>
+                <th>Status</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($staking_records as $record) : ?>
                 <tr>
-                    <th>Stake ID</th>
-                    <th>Amount</th>
-                    <th>Total Earned</th>
-                    <th>Status</th>
-                    <th>Date</th>
+                    <td><?php echo $record['id']; ?></td>
+                    <td><?php echo htmlspecialchars(number_format($record['amount'], 2)); ?></td>
+                    <td><?php echo htmlspecialchars(number_format($record['total_earned'], 2)); ?></td>
+                    <td><?php echo htmlspecialchars($record['status']); ?></td>
+                    <td><?php echo $record['start_time']; ?></td>
                 </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($staking_records as $record) : ?>
-                    <tr>
-                        <td><?php echo $record['id']; ?></td>
-                        <td><?php echo htmlspecialchars(number_format($record['amount'], 2)); ?></td>
-                        <td><?php echo htmlspecialchars(number_format($record['total_earned'], 2)); ?></td>
-                        <td><?php echo htmlspecialchars($record['status']); ?></td>
-                        <td><?php echo $record['start_time']; ?></td>
-                    </tr>
-                    <?php
-                    // Fetch daily earnings for this staking record
-                    $stmt = $conn->prepare("SELECT * FROM daily_earnings WHERE staking_id = ?");
-                    $stmt->bind_param("i", $record['id']);
-                    $stmt->execute();
-                    $earnings = $stmt->get_result();
-                    while ($earning = $earnings->fetch_assoc()) {
-                        echo '<tr>';
-                        echo '<td>' . $record['id'] . '</td>';
-                        echo '<td>' . $earning['id'] . '</td>';
-                        echo '<td>' . htmlspecialchars(number_format($earning['earning'], 2)) . '</td>';
-                        echo '<td>' . $earning['date'] . '</td>';
-                        echo '</tr>';
-                    }
-                    $stmt->close();
-                ?>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+                <?php
+                // Fetch daily earnings for this staking record
+                $stmt = $conn->prepare("SELECT * FROM daily_earnings WHERE staking_id = ?");
+                $stmt->bind_param("i", $record['id']);
+                $stmt->execute();
+                $earnings = $stmt->get_result();
+                while ($earning = $earnings->fetch_assoc()) {
+                    echo '<tr>';
+                    echo '<td>' . $record['id'] . '</td>';
+                    echo '<td>' . $earning['id'] . '</td>';
+                    echo '<td>' . htmlspecialchars(number_format($earning['earning'], 2)) . '</td>';
+                    echo '<td>' . $earning['date'] . '</td>';
+                    echo '</tr>';
+                }
+                $stmt->close();
+            ?>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
 
-        <h3>Total Staking Amount</h3>
-        <p>Total staking amount: $<?php echo htmlspecialchars(number_format($total_staking_amount, 2)); ?></p>
+    <h3>Total Staking Amount</h3>
+    <p>Total staking amount: $<?php echo htmlspecialchars(number_format($total_staking_amount, 2)); ?></p>
 
-        <h3>Total Estimated Earning</h3>
-        <p>Total Estimated Earning: $<?php echo htmlspecialchars(number_format($total_estimated_earning, 2)); ?></p>
+    <h3>Total Estimated Earning</h3>
+    <p>Total Estimated Earning: $<?php echo htmlspecialchars(number_format($total_estimated_earning, 2)); ?></p>
 
-        <h3>Total Remaining Earning</h3>
-        <p>Total Remaining Earning: $<?php echo htmlspecialchars(number_format($total_remaining_earning, 2)); ?></p>
-    </div>
+    <h3>Total Remaining Earning</h3>
+    <p>Total Remaining Earning: $<?php echo htmlspecialchars(number_format($total_remaining_earning, 2)); ?></p>
+</div>

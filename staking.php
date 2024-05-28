@@ -130,6 +130,62 @@ foreach ($staking_records as $record) {
         </tbody>
     </table>
 
+    <h3>Daily Earning Records</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Stake ID</th>
+                <th>Daily Earning ID</th>
+                <th>Staking Amount</th>
+                <th>Daily Earning</th>
+                <th>Withdraw</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+                <tr>
+                    <td><!--Here the id of the daily earning from any staking has to be given--></td>
+                    <td><!--Here Daily Earning will have its unique ID--></td>
+                    <td><!--Here whatever amount is staked will show the daily earning--></td>
+                    <!-- <td>Here he will show his daily earnings from whatever he has staked and the first day's earnings is 0.45%.--></td> 
+                    <td><!--Here there will be a claim button, on clicking on which all the daily earnings of Sari will be transferred to the wallet balance and deducted from there.--></td>
+                    <td><!--Here the date of Daily Earning will be shown on the date on which Daily Earning has started--></td>
+                </tr>
+        </tbody>
+
+
+    <!-- And then the second day will be earned in the same way, But this time the percentage will be 0.55 percent -->
+        <tbody>
+                <tr>
+                    <td><!--Here the id of the daily earning from any staking has to be given--></td>
+                    <td><!--Here Daily Earning will have its unique ID--></td>
+                    <td><!--Here whatever amount is staked will show the daily earning--></td>
+                    <!-- <td>Here he will show his daily earnings from whatever he has staked and the first day's earnings is 0.55%.--></td> 
+                    <td><!--Here there will be a claim button, on clicking on which all the daily earnings of Sari will be transferred to the wallet balance and deducted from there.--></td>
+                    <td><!--Here the date of Daily Earning will be shown on the date on which Daily Earning has started--></td>
+                </tr>
+        </tbody>
+
+
+        <!-- And then the third day will be earned in the same way, But this time the percentage will be 0.65 percent -->
+        <tbody>
+                <tr>
+                    <td><!--Here the id of the daily earning from any staking has to be given--></td>
+                    <td><!--Here Daily Earning will have its unique ID--></td>
+                    <td><!--Here whatever amount is staked will show the daily earning--></td>
+                    <!-- <td>Here he will show his daily earnings from whatever he has staked and the first day's earnings is 0.65%.--></td> 
+                    <td><!--Here there will be a claim button, on clicking on which all the daily earnings of Sari will be transferred to the wallet balance and deducted from there.--></td>
+                    <td><!--Here the date of Daily Earning will be shown on the date on which Daily Earning has started--></td>
+                </tr>
+        </tbody>
+    </table>
+
+    <!-- And then it will be repeated in the same way until its triple reward is fulfilled. For example, if the user invested 10 dollars on staking, he will get 30 dollars, that is, through triple daily earning. -->
+
     <h3>Total Staking Amount</h3>
     <p>Total staking amount: $<?php echo htmlspecialchars(number_format($total_staking_amount, 2)); ?></p>
+    <h3>Total Estimated Earnign</h3>
+    <p>Total Estimated Earnign: <!--Here it will show the estimated earning that how much he has to earn, for example if the user has invested 10 dollars, then he will get 30 dollars, then 30 dollars will be shown here.--> </p>
+    <h3>Total Remaining Earnign</h3>
+    <p>Total Remaining Earnign: <!--Here, the remaining earnings will be shown to the user out of three times, that is, as much as he has earned, what is left will be shown to him. If something has been done through it, then the remaining earnings will be shown here..--> </p>
 </div>

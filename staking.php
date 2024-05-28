@@ -3,6 +3,8 @@ ob_start();
 session_start();
 require('header.php');
 
+date_default_timezone_set('Asia/Karachi');
+
 // Redirect to login page if not logged in
 if (!isset($_SESSION['user_id'])) {
     header("Location: index.php");
@@ -122,8 +124,8 @@ foreach ($staking_records as &$record) {
 function calculateAndUpdateEarnings(&$staking) {
     global $conn;
 
-    $now = new DateTime();
-    $last_update = new DateTime($staking['last_earning_update']);
+    $now = new DateTime("now", new DateTimeZone('Asia/Karachi'));
+    $last_update = new DateTime($staking['last_earning_update'], new DateTimeZone('Asia/Karachi'));
     $interval = $last_update->diff($now);
     $days_passed = $interval->days;
 
@@ -159,6 +161,7 @@ function calculateAndUpdateEarnings(&$staking) {
         }
     }
 }
+
 
 // Calculate total estimated and remaining earnings
 $total_estimated_earning = $total_staking_amount * 3;
